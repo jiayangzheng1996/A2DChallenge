@@ -17,7 +17,7 @@ import time
 # use gpu if cuda can be detected
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-def validate(model, args):
+def validate(model, args, epoch, f):
     test_dataset = a2d_dataset.A2DDataset(val_cfg, args.dataset_path)
     data_loader = DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=1)
 
@@ -42,9 +42,13 @@ def validate(model, args):
     F = F1(X, Y)
     print('Precision: {:.1f} Recall: {:.1f} F1: {:.1f}'.format(100 * P, 100 * R, 100 * F))
 
+    f.write("Epoch {}: Precision: {:.1f} Recall: {:.1f} F1: {:.1f}".format(epoch, 100 * P, 100 * R, 100 * F))
+
 
 def main(args):
     # Create model directory for saving trained models
+    f = open("result.txt", "w")
+
     if not os.path.exists(args.model_path):
         os.makedirs(args.model_path)
 
@@ -54,7 +58,7 @@ def main(args):
     # Define model, Loss, and optimizer
     model = net(args).to(device)###
     criterion = nn.BCEWithLogitsLoss()###
-    params = list(model.fc.parameters()) + list(model.bn.parameters())
+    params = list(model.fc.parameters())
     optimizer = optim.Adam(params, lr=0.01)###
 
     # Train the models
@@ -85,7 +89,9 @@ def main(args):
                     args.model_path, 'net.ckpt'))
         t2 = time.time()
         print(t2 - t1)
-        validate(model, args)
+        validate(model, args, epoch, f)
+
+    f.close()
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_path', type=str, default='models/', help='path for saving trained models')
