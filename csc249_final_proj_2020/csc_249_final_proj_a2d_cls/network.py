@@ -35,7 +35,7 @@ class Classifier(nn.Module):
         self.fc1 = nn.Sequential(
             nn.Linear(resnet1.fc.in_features, args.num_cls),
             nn.Dropout(p=0.2),
-            nn.Softmax(-1)
+            nn.BatchNorm1d(args.num_cls)
         )
         resnet2 = models.resnet101(pretrained=True)
         modules = list(resnet2.children())[:-1]
@@ -43,7 +43,7 @@ class Classifier(nn.Module):
         self.fc2 = nn.Sequential(
             nn.Linear(resnet2.fc.in_features, args.num_cls),
             nn.Dropout(p=0.2),
-            nn.Softmax(-1)
+            nn.BatchNorm1d(args.num_cls)
         )
 
         self.spatial_conv = nn.Sequential(
@@ -63,13 +63,13 @@ class Classifier(nn.Module):
             nn.AvgPool2d(2)
         )
         self.spatial_fc = nn.Sequential(
-            nn.Linear(4096, 2048),
+            nn.Linear(4608, 2048),
             nn.Dropout(p=0.2),
 
             nn.Linear(2048, args.num_cls),
             nn.Dropout(p=0.2),
 
-            nn.Softmax(-1)
+            nn.BatchNorm1d(args.num_cls)
         )
 
         self.weight_net = nn.Linear(3 * args.num_cls, args.num_cls)

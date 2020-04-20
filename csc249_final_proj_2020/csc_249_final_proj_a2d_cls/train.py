@@ -10,7 +10,7 @@ from torch.utils.data import Dataset, DataLoader
 from cfg.deeplab_pretrain_a2d import train as train_cfg
 from cfg.deeplab_pretrain_a2d import val as val_cfg
 from cfg.deeplab_pretrain_a2d import test as test_cfg
-from network import net
+from network import Classifier
 from utils.eval_metrics import Precision, Recall, F1
 import time
 
@@ -48,6 +48,8 @@ def validate(model, args, epoch, f):
 def main(args):
     # Create model directory for saving trained models
     f = open("result.txt", "w")
+    f.write("Following are the validation result:")
+    f.flush()
 
     if not os.path.exists(args.model_path):
         os.makedirs(args.model_path)
@@ -56,9 +58,10 @@ def main(args):
     data_loader = DataLoader(test_dataset, batch_size=4, shuffle=True, num_workers=args.num_workers) # you can make changes
 
     # Define model, Loss, and optimizer
-    model = net(args).to(device)###
-    criterion = nn.BCELoss()###
-    params = list(model.fc.parameters())
+    model = Classifier(args).to(device)###
+    criterion = nn.BCEWithLogitsLoss()###
+    params = list(model.fc1.parameters()) + list(model.fc2.parameters()) + list(model.spatial_conv.parameters()) + \
+             list(model.spatial_fc.parameters()) + list(model.weight_net.parameters()) + list(model.bn.parameters())
     optimizer = optim.Adam(params, lr=0.01)###
 
     lr_decay = torch.optim.lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=0.9)
