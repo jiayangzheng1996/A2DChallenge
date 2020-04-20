@@ -10,7 +10,7 @@ from torch.utils.data import Dataset, DataLoader
 from cfg.deeplab_pretrain_a2d import train as train_cfg
 from cfg.deeplab_pretrain_a2d import val as val_cfg
 from cfg.deeplab_pretrain_a2d import test as test_cfg
-from network import Classifier
+from network import Classifier, net
 from utils.eval_metrics import Precision, Recall, F1
 import time
 
@@ -57,11 +57,17 @@ def main(args):
     test_dataset = a2d_dataset.A2DDataset(train_cfg, args.dataset_path)
     data_loader = DataLoader(test_dataset, batch_size=4, shuffle=True, num_workers=args.num_workers) # you can make changes
 
-    # Define model, Loss, and optimizer
-    model = Classifier(args).to(device)###
-    criterion = nn.BCEWithLogitsLoss()###
-    params = list(model.fc1.parameters()) + list(model.fc2.parameters()) + list(model.spatial_conv.parameters()) + \
-             list(model.spatial_fc.parameters()) + list(model.weight_net.parameters()) + list(model.bn.parameters())
+    # Classifier config
+    # model = Classifier(args).to(device)###
+    # criterion = nn.BCEWithLogitsLoss()###
+    # params = list(model.fc1.parameters()) + list(model.fc2.parameters()) + list(model.spatial_conv.parameters()) + \
+    #          list(model.spatial_fc.parameters()) + list(model.weight_net.parameters()) + list(model.bn.parameters())
+
+    #net config
+    model = net(args).to(device)
+    criterion = nn.BCEWithLogitsLoss()
+    params = list(model.fc.parameters())
+
     optimizer = optim.Adam(params, lr=0.01)###
 
     lr_decay = torch.optim.lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=0.9)
