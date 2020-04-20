@@ -57,9 +57,11 @@ def main(args):
 
     # Define model, Loss, and optimizer
     model = net(args).to(device)###
-    criterion = nn.BCEWithLogitsLoss()###
+    criterion = nn.BCELoss()###
     params = list(model.fc.parameters())
     optimizer = optim.Adam(params, lr=0.01)###
+
+    lr_decay = torch.optim.lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=0.9)
 
     # Train the models
     total_step = len(data_loader)
@@ -90,6 +92,8 @@ def main(args):
         t2 = time.time()
         print(t2 - t1)
         validate(model, args, epoch, f)
+
+        lr_decay.step()
 
     f.close()
 if __name__ == '__main__':
