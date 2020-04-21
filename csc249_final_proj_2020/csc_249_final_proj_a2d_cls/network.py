@@ -43,8 +43,11 @@ class net(nn.Module):
 
 
 class Classifier(nn.Module):
-    def __init__(self, args):
+    def __init__(self, args, mode='train'):
         super(Classifier, self).__init__()
+
+        self.mode = mode
+
         resnet1 = models.resnet152(pretrained=True)
         modules = list(resnet1.children())[:-1]
         self.res152 = nn.Sequential(*modules)
@@ -96,6 +99,12 @@ class Classifier(nn.Module):
             nn.Sigmoid()
         )
 
+        self.fc_actor_action = nn.Sequential(
+            nn.Linear(2048, args.num_cls),
+            nn.Dropout(p=0.5),
+            nn.Sigmoid()
+        )
+
     def forward(self, images):
         with torch.no_grad():
             features1 = self.res152(images)
@@ -110,6 +119,36 @@ class Classifier(nn.Module):
         output3 = self.spatial_fc(features3)
 
         outputs = torch.cat((output1, output2, output3), -1)
-        outputs = self.weight_net(outputs)
+        outputs = self.fc_cat(outputs)
 
-        return outputs
+        actor = self.fc_actor(outputs)
+        actor_action = self.fc_actor_action(outputs)
+
+        if self.mode == 'test':
+            hier_output = self.hierarchical(actor, actor_action)
+            return hier_output
+
+        return actor, actor_action
+
+    def hierarchical(self, actor, actor_action):
+        num_batch, num_cls = actor_action.shape
+        hierarchical_pred = torch.zeros([num_batch, num_cls])
+
+        for b in range(num_batch):
+            for c in range(num_cls):
+                if 0 <= c < 8:
+                    hierarchical_pred[b, c] = actor_action[b, c].data * actor[b, 0].data
+                elif 8 <= c < 13:
+                    hierarchical_pred[b, c] = actor_action[b, c].data * actor[b, 1].data
+                elif 13 <= c < 17:
+                    hierarchical_pred[b, c] = actor_action[b, c].data * actor[b, 2].data
+                elif 17 <= c < 24:
+                    hierarchical_pred[b, c] = actor_action[b, c].data * actor[b, 3].data
+                elif 24 <= c < 29:
+                    hierarchical_pred[b, c] = actor_action[b, c].data * actor[b, 4].data
+                elif 29 <= c < 36:
+                    hierarchical_pred[b, c] = actor_action[b, c].data * actor[b, 5].data
+                else:
+                    hierarchical_pred[b, c] = actor_action[b, c].data * actor[b, 6].data
+
+        return hierarchical_pred

@@ -35,6 +35,8 @@ def get_actor_cls(labels):
     
 
 def validate(model, args, epoch, f):
+    model.mode = 'test'
+
     test_dataset = a2d_dataset.A2DDataset(val_cfg, args.dataset_path)
     data_loader = DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=1)
 
@@ -62,6 +64,7 @@ def validate(model, args, epoch, f):
     f.write("Epoch {}: Precision: {:.1f} Recall: {:.1f} F1: {:.1f} \n".format(epoch, 100 * P, 100 * R, 100 * F))
     f.flush()
 
+    model.mode = 'train'
     return P+R+F
 
 
@@ -81,9 +84,11 @@ def main(args):
 
     # Classifier config
     model = Classifier(args).to(device)###
-    criterion = nn.BCELoss()###
-    params = list(model.fc1.parameters()) + list(model.fc2.parameters()) + list(model.spatial_conv.parameters()) + \
-             list(model.spatial_fc.parameters()) + list(model.weight_net.parameters())
+    criterion_actor = nn.BCELoss()
+    criterion_actor_action = nn.BCELoss()###
+    # params = list(model.fc1.parameters()) + list(model.fc2.parameters()) + list(model.spatial_conv.parameters()) + \
+    #          list(model.spatial_fc.parameters()) + list(model.weight_net.parameters())
+    params = model.parameters()
 
     #net config
     # model = net(args).to(device)
@@ -94,6 +99,8 @@ def main(args):
 
     lr_decay = torch.optim.lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=args.gamma)
 
+    # metrics = validate(model, args, 0, f)
+
     # Train the models
     total_step = len(data_loader)
     for epoch in range(args.num_epochs):
@@ -103,11 +110,11 @@ def main(args):
             # mini-batch
             images = data[0].to(device)
             labels = data[1].type(torch.FloatTensor).to(device)
-            actor_labels = get_actor_cls(labels)
+            actor_labels = get_actor_cls(labels).to(device)
 
             # Forward, backward and optimize
-            outputs = model(images)
-            loss = criterion(outputs, labels)
+            actor, actor_action = model(images)
+            loss = criterion_actor(actor, actor_labels) + criterion_actor_action(actor_action, labels)
             model.zero_grad()
             loss.backward()
             optimizer.step()
@@ -144,7 +151,7 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', type=int, default=4)
     parser.add_argument('--num_workers', type=int, default=2)
     parser.add_argument('--lr', type=float, default=0.01)
-    parser.add_argument('--gamma', type=int, default=0.95)
+    parser.add_argument('--gamma', type=float, default=0.95)
     args = parser.parse_args()
     print(args)
 main(args)
