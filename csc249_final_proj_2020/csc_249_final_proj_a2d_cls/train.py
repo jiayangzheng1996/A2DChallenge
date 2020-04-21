@@ -17,6 +17,9 @@ import time
 # use gpu if cuda can be detected
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
+def get_actor_action_cls(labels):
+    
+
 def validate(model, args, epoch, f):
     test_dataset = a2d_dataset.A2DDataset(val_cfg, args.dataset_path)
     data_loader = DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=1)
