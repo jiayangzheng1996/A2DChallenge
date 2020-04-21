@@ -42,13 +42,14 @@ def validate(model, args, epoch, f):
     F = F1(X, Y)
     print('Precision: {:.1f} Recall: {:.1f} F1: {:.1f}'.format(100 * P, 100 * R, 100 * F))
 
-    f.write("Epoch {}: Precision: {:.1f} Recall: {:.1f} F1: {:.1f}".format(epoch, 100 * P, 100 * R, 100 * F))
+    f.write("Epoch {}: Precision: {:.1f} Recall: {:.1f} F1: {:.1f} \n".format(epoch, 100 * P, 100 * R, 100 * F))
+    f.flush()
 
 
 def main(args):
     # Create model directory for saving trained models
     f = open("result.txt", "w")
-    f.write("Following are the validation result:")
+    f.write("Following are the validation result: \n")
     f.flush()
 
     if not os.path.exists(args.model_path):
@@ -58,19 +59,19 @@ def main(args):
     data_loader = DataLoader(test_dataset, batch_size=4, shuffle=True, num_workers=args.num_workers) # you can make changes
 
     # Classifier config
-    # model = Classifier(args).to(device)###
-    # criterion = nn.BCEWithLogitsLoss()###
-    # params = list(model.fc1.parameters()) + list(model.fc2.parameters()) + list(model.spatial_conv.parameters()) + \
-    #          list(model.spatial_fc.parameters()) + list(model.weight_net.parameters()) + list(model.bn.parameters())
+    model = Classifier(args).to(device)###
+    criterion = nn.BCELoss()###
+    params = list(model.fc1.parameters()) + list(model.fc2.parameters()) + list(model.spatial_conv.parameters()) + \
+             list(model.spatial_fc.parameters()) + list(model.weight_net.parameters())
 
     #net config
-    model = net(args).to(device)
-    criterion = nn.BCEWithLogitsLoss()
-    params = list(model.fc.parameters())
+    # model = net(args).to(device)
+    # criterion = nn.BCEWithLogitsLoss()
+    # params = list(model.fc.parameters())
 
     optimizer = optim.Adam(params, lr=0.01)###
 
-    lr_decay = torch.optim.lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=0.9)
+    lr_decay = torch.optim.lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=0.95)
 
     # Train the models
     total_step = len(data_loader)

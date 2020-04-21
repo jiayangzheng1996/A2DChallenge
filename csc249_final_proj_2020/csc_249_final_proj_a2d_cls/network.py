@@ -6,6 +6,22 @@ from torch.autograd import Variable
 import math
 
 
+def outputs_vectorize(output1, output2, output3):
+    num_batch, num_cls = output1.shape
+
+    list = []
+
+    for i in range(num_cls):
+        vector = torch.zeros([num_batch, 3])
+        for b in range(num_batch):
+            vector[b, 0] = output1[b, i]
+            vector[b, 1] = output2[b, i]
+            vector[b, 2] = output3[b, i]
+        list.append(vector)
+
+    return list
+
+
 class net(nn.Module):
     def __init__(self, args):
         super(net, self).__init__()
@@ -35,7 +51,7 @@ class Classifier(nn.Module):
         self.fc1 = nn.Sequential(
             nn.Linear(resnet1.fc.in_features, args.num_cls),
             nn.Dropout(p=0.2),
-            nn.BatchNorm1d(args.num_cls)
+            nn.BatchNorm1d(args.num_cls, momentum=0.01)
         )
         resnet2 = models.resnet101(pretrained=True)
         modules = list(resnet2.children())[:-1]
@@ -43,7 +59,7 @@ class Classifier(nn.Module):
         self.fc2 = nn.Sequential(
             nn.Linear(resnet2.fc.in_features, args.num_cls),
             nn.Dropout(p=0.2),
-            nn.BatchNorm1d(args.num_cls)
+            nn.BatchNorm1d(args.num_cls, momentum=0.01)
         )
 
         self.spatial_conv = nn.Sequential(
@@ -68,14 +84,14 @@ class Classifier(nn.Module):
 
             nn.Linear(2048, args.num_cls),
             nn.Dropout(p=0.2),
-
-            nn.BatchNorm1d(args.num_cls)
+            nn.BatchNorm1d(args.num_cls, momentum=0.01)
         )
 
-        self.weight_net = nn.Linear(3 * args.num_cls, args.num_cls)
-
-        self.bn = nn.BatchNorm1d(args.num_cls, momentum=0.01)
-
+        self.weight_net = nn.Sequential(
+            nn.Linear(3 * args.num_cls, args.num_cls),
+            nn.BatchNorm1d(args.num_cls, momentum=0.01),
+            nn.Sigmoid()
+        )
 
     def forward(self, images):
         with torch.no_grad():
@@ -92,6 +108,5 @@ class Classifier(nn.Module):
 
         outputs = torch.cat((output1, output2, output3), -1)
         outputs = self.weight_net(outputs)
-        outputs = self.bn(outputs)
 
         return outputs
