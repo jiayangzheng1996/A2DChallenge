@@ -49,17 +49,17 @@ class Classifier(nn.Module):
         modules = list(resnet1.children())[:-1]
         self.res152 = nn.Sequential(*modules)
         self.fc1 = nn.Sequential(
-            nn.Linear(resnet1.fc.in_features, args.num_cls),
-            nn.Dropout(p=0.2),
-            nn.BatchNorm1d(args.num_cls, momentum=0.01)
+            nn.Linear(resnet1.fc.in_features, 2048),
+            nn.Dropout(p=0.5),
+            nn.BatchNorm1d(2048, momentum=0.01)
         )
         resnet2 = models.resnet101(pretrained=True)
         modules = list(resnet2.children())[:-1]
         self.res101 = nn.Sequential(*modules)
         self.fc2 = nn.Sequential(
-            nn.Linear(resnet2.fc.in_features, args.num_cls),
-            nn.Dropout(p=0.2),
-            nn.BatchNorm1d(args.num_cls, momentum=0.01)
+            nn.Linear(resnet2.fc.in_features, 2048),
+            nn.Dropout(p=0.5),
+            nn.BatchNorm1d(2048, momentum=0.01)
         )
 
         self.spatial_conv = nn.Sequential(
@@ -80,16 +80,19 @@ class Classifier(nn.Module):
         )
         self.spatial_fc = nn.Sequential(
             nn.Linear(4608, 2048),
-            nn.Dropout(p=0.2),
-
-            nn.Linear(2048, args.num_cls),
-            nn.Dropout(p=0.2),
-            nn.BatchNorm1d(args.num_cls, momentum=0.01)
+            nn.Dropout(p=0.5),
+            nn.BatchNorm1d(2048, momentum=0.01)
         )
 
-        self.weight_net = nn.Sequential(
-            nn.Linear(3 * args.num_cls, args.num_cls),
-            nn.BatchNorm1d(args.num_cls, momentum=0.01),
+        self.fc_cat = nn.Sequential(
+            nn.Linear(3 * 2048, 2048),
+            nn.Dropout(p=0.5),
+            nn.BatchNorm1d(2048, momentum=0.01)
+        )
+
+        self.fc_actor = nn.Sequential(
+            nn.Linear(2048, 7),
+            nn.Dropout(p=0.5),
             nn.Sigmoid()
         )
 
