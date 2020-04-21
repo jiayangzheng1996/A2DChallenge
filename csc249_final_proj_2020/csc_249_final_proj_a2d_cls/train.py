@@ -51,7 +51,7 @@ def validate(model, args, epoch, f):
 
 def main(args):
     # Create model directory for saving trained models
-    f = open("result.txt", "w")
+    f = open("result_hierarchical.txt", "w")
     f.write("Following are the validation result: \n")
     f.flush()
 
