@@ -17,7 +17,21 @@ import time
 # use gpu if cuda can be detected
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-def get_actor_action_cls(labels):
+def get_actor_cls(labels):
+    num_batch, num_cls = labels.shape
+    valid_cls = a2d_dataset.A2DDataset.valid_cls
+
+    actor_labels = torch.zeros([num_batch, 7])
+
+    for b in range(num_batch):
+        for c in range(num_cls):
+            if labels[b, c].item():
+                cls = valid_cls[c]
+                cls_str = str(cls)
+                actor = int(cls_str[0]) - 1
+                actor_labels[b, actor] = 1
+
+    return actor_labels
     
 
 def validate(model, args, epoch, f):
@@ -51,7 +65,6 @@ def validate(model, args, epoch, f):
     return P+R+F
 
 
-
 def main(args):
     # Create model directory for saving trained models
     f = open("result_hierarchical.txt", "w")
@@ -64,7 +77,7 @@ def main(args):
         os.makedirs(args.model_path)
 
     test_dataset = a2d_dataset.A2DDataset(train_cfg, args.dataset_path)
-    data_loader = DataLoader(test_dataset, batch_size=4, shuffle=True, num_workers=args.num_workers) # you can make changes
+    data_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers) # you can make changes
 
     # Classifier config
     model = Classifier(args).to(device)###
@@ -77,9 +90,9 @@ def main(args):
     # criterion = nn.BCEWithLogitsLoss()
     # params = list(model.fc.parameters())
 
-    optimizer = optim.Adam(params, lr=0.01)###
+    optimizer = optim.Adam(params, lr=args.lr)###
 
-    lr_decay = torch.optim.lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=0.95)
+    lr_decay = torch.optim.lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=args.gamma)
 
     # Train the models
     total_step = len(data_loader)
@@ -90,6 +103,7 @@ def main(args):
             # mini-batch
             images = data[0].to(device)
             labels = data[1].type(torch.FloatTensor).to(device)
+            actor_labels = get_actor_cls(labels)
 
             # Forward, backward and optimize
             outputs = model(images)
@@ -127,8 +141,10 @@ if __name__ == '__main__':
     parser.add_argument('--num_cls', type=int, default=43)
     # Model parameters
     parser.add_argument('--num_epochs', type=int, default=10)
-    parser.add_argument('--batch_size', type=int, default=32)
+    parser.add_argument('--batch_size', type=int, default=4)
     parser.add_argument('--num_workers', type=int, default=2)
+    parser.add_argument('--lr', type=float, default=0.01)
+    parser.add_argument('--gamma', type=int, default=0.95)
     args = parser.parse_args()
     print(args)
 main(args)
