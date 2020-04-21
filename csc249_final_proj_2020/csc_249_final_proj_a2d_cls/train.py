@@ -45,12 +45,17 @@ def validate(model, args, epoch, f):
     f.write("Epoch {}: Precision: {:.1f} Recall: {:.1f} F1: {:.1f} \n".format(epoch, 100 * P, 100 * R, 100 * F))
     f.flush()
 
+    return P+R+F
+
+
 
 def main(args):
     # Create model directory for saving trained models
     f = open("result.txt", "w")
     f.write("Following are the validation result: \n")
     f.flush()
+
+    best_metrics = 0
 
     if not os.path.exists(args.model_path):
         os.makedirs(args.model_path)
@@ -96,12 +101,16 @@ def main(args):
                       .format(epoch, args.num_epochs, i, total_step, loss.item()))
 
             # Save the model checkpoints
-            if (i + 1) % args.save_step == 0:
-                torch.save(model.state_dict(), os.path.join(
-                    args.model_path, 'net.ckpt'))
+            # if (i + 1) % args.save_step == 0:
+            #     torch.save(model.state_dict(), os.path.join(
+            #         args.model_path, 'net.ckpt'))
         t2 = time.time()
         print(t2 - t1)
-        validate(model, args, epoch, f)
+        metrics = validate(model, args, epoch, f)
+
+        if metrics > best_metrics:
+            torch.save(model.state_dict, os.path.join(args.model_path, 'net.ckpt'))
+            best_metrics = metrics
 
         lr_decay.step()
 
