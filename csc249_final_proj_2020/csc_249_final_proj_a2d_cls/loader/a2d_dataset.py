@@ -180,7 +180,7 @@ class A2DDataset(Dataset):
     def __getitem__(self, idx):
         vd_frame_idx = self.img_list[idx]
         image_path = os.path.join(self.img_dir, vd_frame_idx + '.png')
-        image = cv2.imread(image_path).astype(np.float32)
+        image = cv2.imread(image_path)
         gt_load_path = os.path.join(self.gt_dir, vd_frame_idx + '.mat')
         label_orig = h5py.File(gt_load_path)['reS_id'].value
         label_orig = np.transpose(label_orig)
