@@ -99,8 +99,6 @@ def main(args):
 
     lr_decay = torch.optim.lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=args.gamma)
 
-    # metrics = validate(model, args, 0, f)
-
     # Train the models
     total_step = len(data_loader)
     for epoch in range(args.num_epochs):
@@ -130,11 +128,11 @@ def main(args):
             #         args.model_path, 'net.ckpt'))
         t2 = time.time()
         print(t2 - t1)
-        metrics = validate(model, args, epoch, f)
-
-        if metrics > best_metrics:
-            torch.save(model.state_dict, os.path.join(args.model_path, 'net.ckpt'))
-            best_metrics = metrics
+        if epoch % args.log_step == 0 or epoch % args.log_step == 5:
+            metrics = validate(model, args, epoch, f)
+            if metrics > best_metrics:
+                torch.save(model.state_dict, os.path.join(args.model_path, 'net.ckpt'))
+                best_metrics = metrics
 
         lr_decay.step()
 

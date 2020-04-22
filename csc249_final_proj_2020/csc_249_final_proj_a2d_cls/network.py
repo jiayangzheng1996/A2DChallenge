@@ -125,30 +125,30 @@ class Classifier(nn.Module):
         actor_action = self.fc_actor_action(outputs)
 
         if self.mode == 'test':
-            hier_output = self.hierarchical(actor, actor_action)
-            return hier_output
+            self.hierarchical(actor, actor_action)
+            return actor_action
 
         return actor, actor_action
 
     def hierarchical(self, actor, actor_action):
         num_batch, num_cls = actor_action.shape
-        hierarchical_pred = torch.zeros([num_batch, num_cls])
 
-        for b in range(num_batch):
-            for c in range(num_cls):
-                if 0 <= c < 8:
-                    hierarchical_pred[b, c] = actor_action[b, c].data * actor[b, 0].data
-                elif 8 <= c < 13:
-                    hierarchical_pred[b, c] = actor_action[b, c].data * actor[b, 1].data
-                elif 13 <= c < 17:
-                    hierarchical_pred[b, c] = actor_action[b, c].data * actor[b, 2].data
-                elif 17 <= c < 24:
-                    hierarchical_pred[b, c] = actor_action[b, c].data * actor[b, 3].data
-                elif 24 <= c < 29:
-                    hierarchical_pred[b, c] = actor_action[b, c].data * actor[b, 4].data
-                elif 29 <= c < 36:
-                    hierarchical_pred[b, c] = actor_action[b, c].data * actor[b, 5].data
-                else:
-                    hierarchical_pred[b, c] = actor_action[b, c].data * actor[b, 6].data
-
-        return hierarchical_pred
+        if self.mode == 'test':
+            for b in range(num_batch):
+                for c in range(num_cls):
+                    if 0 <= c < 8:
+                        actor_action[b, c].data *= actor[b, 0].data
+                    elif 8 <= c < 13:
+                        actor_action[b, c].data *= actor[b, 1].data
+                    elif 13 <= c < 17:
+                        actor_action[b, c].data *= actor[b, 2].data
+                    elif 17 <= c < 24:
+                        actor_action[b, c].data *= actor[b, 3].data
+                    elif 24 <= c < 29:
+                        actor_action[b, c].data *= actor[b, 4].data
+                    elif 29 <= c < 36:
+                        actor_action[b, c].data *= actor[b, 5].data
+                    else:
+                        actor_action[b, c].data *= actor[b, 6].data
+        else:
+            print("mode is not testing when reached hierarchical joint prediction. \n")
