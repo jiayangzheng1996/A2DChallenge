@@ -389,7 +389,7 @@ class A2DDataset_test(Dataset):
     def __getitem__(self, idx):
         vd_frame_idx = self.img_list[idx]
         image_path = os.path.join(self.img_dir, vd_frame_idx + '.png')
-        image = cv2.imread(image_path).astype(np.float32)
+        image = cv2.imread(image_path)
 
 
         image = cv2.resize(image, (224, 224))
