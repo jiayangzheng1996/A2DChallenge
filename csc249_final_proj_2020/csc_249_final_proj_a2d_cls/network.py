@@ -90,7 +90,7 @@ class Classifier(nn.Module):
         self.fc_cat = nn.Sequential(
             nn.Linear(3 * 2048, 2048),
             nn.Dropout(p=0.5),
-            nn.BatchNorm1d(2048, momentum=0.01)
+            nn.Sigmoid()
         )
 
         self.fc_actor = nn.Sequential(
@@ -113,6 +113,9 @@ class Classifier(nn.Module):
         features2 = features2.reshape(features2.shape[0], -1)
         output1 = self.fc1(features1)
         output2 = self.fc2(features2)
+        # output1 = features1
+        # output2 = features2
+
 
         features3 = self.spatial_conv(images)
         features3 = features3.reshape(features3.shape[0], -1)

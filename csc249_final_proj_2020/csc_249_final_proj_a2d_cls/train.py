@@ -113,6 +113,7 @@ def main(args):
             # Forward, backward and optimize
             actor, actor_action = model(images)
             loss = criterion_actor(actor, actor_labels) + criterion_actor_action(actor_action, labels)
+            loss = loss.mean()
             model.zero_grad()
             loss.backward()
             optimizer.step()
