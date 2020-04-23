@@ -89,7 +89,7 @@ class Classifier(nn.Module):
 
         self.weight_net = nn.Sequential(
             nn.Linear(3 * args.num_cls, args.num_cls),
-            nn.BatchNorm1d(args.num_cls, momentum=0.01),
+            nn.Dropout(p=0.2),
             nn.Sigmoid()
         )
 
