@@ -38,7 +38,7 @@ def get_actor_cls(labels):
 def validate(model, args, epoch, f):
     model.mode = 'test'
 
-    test_dataset = a2d_dataset.A2DDataset(val_cfg, args.dataset_path)
+    test_dataset = a2d_dataset.A2DDatasetVideo(val_cfg, args.dataset_path)
     data_loader = DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=1)
 
     X = np.zeros((data_loader.__len__(), args.num_cls))
@@ -102,9 +102,12 @@ def main(args):
 
     lr_decay = torch.optim.lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=args.gamma)
 
+    best_metrics = validate(model, args, 0, f)
+    
     # Train the models
     total_step = len(data_loader)
     for epoch in range(1, args.num_epochs+1):
+        model.train()
         t1 = time.time()
         for i, data in enumerate(data_loader):
 
