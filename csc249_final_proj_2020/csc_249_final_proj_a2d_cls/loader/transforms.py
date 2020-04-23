@@ -114,6 +114,16 @@ def group_center_pad(img_group, target_size, values):
         outs.append(pad(img, [h1, w1, h2, w2], value=value))
     return outs
 
+def concer_pad(img, target_size, value):
+    h, w = img.shape[0:2]
+    th, tw = target_size
+
+    h1 = 0
+    w1 = 0
+    h2 = max(th - h - h1, 0)
+    w2 = max(tw - w - w1, 0)
+
+    return pad(img, [h1, w1, h2, w2], value=value)
 
 def group_concer_pad(img_group, target_size, values):
     h, w = img_group[0].shape[0:2]

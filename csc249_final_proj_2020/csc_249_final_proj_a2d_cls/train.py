@@ -1,6 +1,7 @@
 from loader import a2d_dataset
 import argparse
 import torch
+from torch.autograd import Variable
 import torch.nn as nn
 import torch.optim as optim
 import numpy as np
@@ -10,7 +11,7 @@ from torch.utils.data import Dataset, DataLoader
 from cfg.deeplab_pretrain_a2d import train as train_cfg
 from cfg.deeplab_pretrain_a2d import val as val_cfg
 from cfg.deeplab_pretrain_a2d import test as test_cfg
-from network import Classifier, net
+from network import net
 from utils.eval_metrics import Precision, Recall, F1
 import time
 
@@ -47,9 +48,11 @@ def validate(model, args, epoch, f):
     with torch.no_grad():
         for batch_idx, data in enumerate(data_loader):
             # mini-batch
-            images = data[0].to(device)
-            labels = data[1].type(torch.FloatTensor).to(device)
-            output = model(images).cpu().detach().numpy()
+            image = data[0].to(device)
+            images = data[1].to(device)
+            labels = data[2].type(torch.FloatTensor).to(device)
+            model.actor_action.decoder.__reset__hidden__()
+            output = model(image, images).cpu().detach().numpy()
             target = labels.cpu().detach().numpy()
             output[output >= 0.5] = 1
             output[output < 0.5] = 0
@@ -79,13 +82,13 @@ def main(args):
     if not os.path.exists(args.model_path):
         os.makedirs(args.model_path)
 
-    test_dataset = a2d_dataset.A2DDataset(train_cfg, args.dataset_path)
+    test_dataset = a2d_dataset.A2DDatasetVideo(train_cfg, args.dataset_path)
     data_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers) # you can make changes
 
     # Classifier config
-    model = Classifier(args).to(device)###
-    criterion_actor = nn.BCELoss()
-    criterion_actor_action = nn.BCELoss()###
+    model = net(args).to(device)###
+    criterion_actor = nn.BCEWithLogitsLoss()
+    criterion_actor_action = nn.BCEWithLogitsLoss()###
     # params = list(model.fc1.parameters()) + list(model.fc2.parameters()) + list(model.spatial_conv.parameters()) + \
     #          list(model.spatial_fc.parameters()) + list(model.weight_net.parameters())
     params = model.parameters()
@@ -101,20 +104,27 @@ def main(args):
 
     # Train the models
     total_step = len(data_loader)
-    for epoch in range(args.num_epochs):
+    for epoch in range(1, args.num_epochs+1):
         t1 = time.time()
         for i, data in enumerate(data_loader):
 
             # mini-batch
-            images = data[0].to(device)
-            labels = data[1].type(torch.FloatTensor).to(device)
+            # image = Variable(data[0].to(device), requires_grad=True)
+            # images = Variable(data[1].to(device), requires_grad=True)
+            # labels = Variable(data[2].type(torch.FloatTensor).to(device), requires_grad=True)
+            image = data[0].to(device)
+            images = data[1].to(device)
+            labels = data[2].type(torch.FloatTensor).to(device)
             actor_labels = get_actor_cls(labels).to(device)
 
+            optimizer.zero_grad()
+
+            model.actor_action.decoder.__reset__hidden__()
+
             # Forward, backward and optimize
-            actor, actor_action = model(images)
+            actor, actor_action = model(image, images)
             loss = criterion_actor(actor, actor_labels) + criterion_actor_action(actor_action, labels)
             loss = loss.mean()
-            model.zero_grad()
             loss.backward()
             optimizer.step()
 
