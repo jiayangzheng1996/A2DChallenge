@@ -103,7 +103,7 @@ def main(args):
     lr_decay = torch.optim.lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=args.gamma)
 
     best_metrics = validate(model, args, 0, f)
-    
+
     # Train the models
     total_step = len(data_loader)
     for epoch in range(1, args.num_epochs+1):
