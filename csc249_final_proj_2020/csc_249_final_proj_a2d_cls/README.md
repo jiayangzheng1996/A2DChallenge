@@ -15,3 +15,8 @@ We use precision, recall, and F1-score to measure performance of trained models.
 
 ## Submission 
 We will evaluate your model on the testing set and the results should be a (NXnum_cls) array containing predictions saved as "results.pkl", where N (1044) refers to testing set size and num_cls (43) is the number of classes, and the elements are 0 or 1. You may follow the test.py to do testing.
+
+# Two-Stream Neural Network for Actor-Action Classification
+Contained in this folder are the source code for our two-stream implementation for actor-action classification.
+Trained network parameters are in ./model/net.ckpt
+Result on testing set is the file results_jzheng13.pkl
