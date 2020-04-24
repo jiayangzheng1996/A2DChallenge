@@ -8,7 +8,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0" # GPU ID
 from torch.utils.data import Dataset, DataLoader
 from cfg.deeplab_pretrain_a2d import train as train_cfg
 from cfg.deeplab_pretrain_a2d import val as val_cfg
-from network import net, Classifier
+from network import net
 import time
 from utils.eval_metrics import Precision, Recall, F1
 
@@ -20,11 +20,11 @@ def main(args):
     if not os.path.exists(args.model_path):
         os.makedirs(args.model_path)
 
-    test_dataset = a2d_dataset.A2DDataset(val_cfg, args.dataset_path)
+    test_dataset = a2d_dataset.A2DDatasetVideo(val_cfg, args.dataset_path)
     data_loader = DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=1)
     
     # define load your model here
-    model = Classifier(args).to(device)#
+    model = net(args, 'test').to(device)#
     model.load_state_dict(torch.load(os.path.join(args.model_path, 'net.ckpt')))
     
     X = np.zeros((data_loader.__len__(), args.num_cls))
@@ -35,8 +35,10 @@ def main(args):
         for batch_idx, data in enumerate(data_loader):
             # mini-batch
             images = data[0].to(device)
-            labels = data[1].type(torch.FloatTensor).to(device)
-            output = model(images).cpu().detach().numpy()
+            image_sequences = data[1].to(device)
+            labels = data[2].type(torch.FloatTensor).to(device)
+            model.actor_action.decoder.__reset__hidden__()
+            output = model(images, image_sequences).cpu().detach().numpy()
             target = labels.cpu().detach().numpy()
             output[output >= 0.5] = 1
             output[output < 0.5] = 0

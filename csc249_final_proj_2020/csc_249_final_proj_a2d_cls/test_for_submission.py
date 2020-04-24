@@ -6,7 +6,6 @@ import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "0" # GPU ID
 from torch.utils.data import Dataset, DataLoader
 from cfg.deeplab_pretrain_a2d import test as test_cfg
-from network import Res152_MLMC
 from  network import net
 import pickle
 
@@ -104,7 +103,7 @@ def main(args):
     data_loader = DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=1)
 
     # define and load pre-trained model
-    model = net(args).to(device)
+    model = net(args, mode='test').to(device)
     model.load_state_dict(torch.load(os.path.join(args.model_path, 'net.ckpt')))
 
     results = np.zeros((data_loader.__len__(), args.num_cls))
@@ -121,7 +120,7 @@ def main(args):
             output[output >= 0.5] = 1
             output[output < 0.5] = 0
             results[batch_idx, :] = output
-    with open('results_netid.pkl', 'wb') as f:
+    with open('results_jzheng13.pkl', 'wb') as f:
         pickle.dump(results, f)
 
 
