@@ -7,6 +7,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0" # GPU ID
 from torch.utils.data import Dataset, DataLoader
 from cfg.deeplab_pretrain_a2d import test as test_cfg
 from network import Res152_MLMC
+from  network import net
 import pickle
 
 # use gpu if cuda can be detected
@@ -99,11 +100,11 @@ def main(args):
     if not os.path.exists(args.model_path):
         os.makedirs(args.model_path)
 
-    test_dataset = a2d_dataset.A2DDataset_test(test_cfg, args.dataset_path)
+    test_dataset = a2d_dataset.A2DDatasetVideo_test(test_cfg, args.dataset_path)
     data_loader = DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=1)
 
     # define and load pre-trained model
-    model = #
+    model = net(args).to(device)
     model.load_state_dict(torch.load(os.path.join(args.model_path, 'net.ckpt')))
 
     results = np.zeros((data_loader.__len__(), args.num_cls))
@@ -113,8 +114,10 @@ def main(args):
     with torch.no_grad():
         for batch_idx, data in enumerate(data_loader):
             # mini-batch
-            images = data.to(device)
-            output = model(images).cpu().detach().numpy()
+            images = data[0].to(device)
+            image_sequences = data[1].to(device)
+            model.actor_action.decoder.__reset__hidden__()
+            output = model(images, image_sequences).cpu().detach().numpy()
             output[output >= 0.5] = 1
             output[output < 0.5] = 0
             results[batch_idx, :] = output
