@@ -18,8 +18,8 @@ class net(nn.Module):
         actor_action = self.actor_action(image_sequence)
 
         if self.mode == 'test':
-            self.hierarchical(actor, actor_action)
-            return actor_action
+            output = self.hierarchical(actor, actor_action)
+            return output
 
         return actor, actor_action
 
@@ -46,6 +46,7 @@ class net(nn.Module):
                         actor_action[b, c].data *= actor[b, 5].data
                     else:
                         actor_action[b, c].data *= actor[b, 6].data
+            return actor_action
         else:
             print("mode is not testing when reached hierarchical joint prediction. \n")
 
