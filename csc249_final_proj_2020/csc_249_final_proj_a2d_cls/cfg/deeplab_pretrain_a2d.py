@@ -33,7 +33,7 @@ train = Namespace(**train)
 
 # val strategry
 val = dict(
-    batch_size=12,
+    batch_size=1,
     data_list='val',
     input_mean=[103.939, 116.779, 123.68],
     input_std=[1, 1, 1],

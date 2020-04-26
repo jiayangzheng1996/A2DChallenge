@@ -68,7 +68,7 @@ def validate(model, args, epoch, f):
     f.flush()
 
     model.mode = 'train'
-    return P+R+F
+    return F
 
 
 def main(args):
@@ -98,11 +98,19 @@ def main(args):
     # criterion = nn.BCEWithLogitsLoss()
     # params = list(model.fc.parameters())
 
-    optimizer = optim.Adam(params, lr=args.lr)###
+    optimizer_actor = optim.Adam(model.actor.parameters(), lr=args.lr)###
 
-    lr_decay = torch.optim.lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=args.gamma)
+    lr_decay_actor = torch.optim.lr_scheduler.ExponentialLR(optimizer=optimizer_actor, gamma=args.gamma)
 
-    best_metrics = validate(model, args, 0, f)
+    optimizer_action = optim.Adam(model.actor_action.parameters(), lr=args.action_lr)
+
+    lr_decay_action = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer=optimizer_action,
+        mode='max',
+        patience=3,
+        threshold=1e-3)
+
+    # best_metrics = validate(model, args, 0, f)
 
     # Train the models
     total_step = len(data_loader)
@@ -120,21 +128,24 @@ def main(args):
             labels = data[2].type(torch.FloatTensor).to(device)
             actor_labels = get_actor_cls(labels).to(device)
 
-            optimizer.zero_grad()
+            optimizer_actor.zero_grad()
+            optimizer_action.zero_grad()
 
             model.actor_action.decoder.__reset__hidden__()
 
             # Forward, backward and optimize
             actor, actor_action = model(image, images)
-            loss = criterion_actor(actor, actor_labels) + criterion_actor_action(actor_action, labels)
-            loss = loss.mean()
-            loss.backward()
-            optimizer.step()
+            loss_actor = criterion_actor(actor, actor_labels)
+            loss_action = criterion_actor_action(actor_action, labels)
+            loss_actor.backward()
+            loss_action.backward()
+            optimizer_actor.step()
+            optimizer_action.step()
 
             # Log info
             if i % args.log_step == 0:
-                print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}'
-                      .format(epoch, args.num_epochs, i, total_step, loss.item()))
+                print('Epoch [{}/{}], Step [{}/{}], Actor Loss: {:.4f}, Action Loss: {:.4f}'
+                      .format(epoch, args.num_epochs, i, total_step, loss_actor.item(), loss_action.item()))
 
             # Save the model checkpoints
             # if (i + 1) % args.save_step == 0:
@@ -147,8 +158,9 @@ def main(args):
             if metrics > best_metrics:
                 torch.save(model.state_dict(), os.path.join(args.model_path, 'net.ckpt'))
                 best_metrics = metrics
+                lr_decay_action.step(metrics)
 
-        lr_decay.step()
+        lr_decay_actor.step()
 
     f.close()
 if __name__ == '__main__':
@@ -163,6 +175,7 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', type=int, default=4)
     parser.add_argument('--num_workers', type=int, default=2)
     parser.add_argument('--lr', type=float, default=0.01)
+    parser.add_argument('--action_lr', type=float, default=1e-5)
     parser.add_argument('--gamma', type=float, default=0.95)
     args = parser.parse_args()
     print(args)

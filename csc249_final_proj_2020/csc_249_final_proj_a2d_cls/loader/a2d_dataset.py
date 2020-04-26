@@ -859,15 +859,15 @@ if __name__ == '__main__':
     # val_dataset = A2DDataset(val_cfg)
 
     # load training or validation datasets
-    train_dataset = A2DDatasetVideo(train_cfg, '../A2D', 40)
-    dataloader = DataLoader(train_dataset, batch_size=4,
-                           shuffle=True, num_workers=0)
+    train_dataset = A2DDatasetVideo(val_cfg, '../A2D', 40)
+    dataloader = DataLoader(train_dataset, batch_size=1,
+                           shuffle=False, num_workers=1)
     for i, data in enumerate(dataloader):
         print(data[0].size(), data[1].size(), data[2].size())
         break
 
     # load test datasets
-    test_dataset = A2DDatasetVideo_test(test_cfg, '../A2D')
+    test_dataset = A2DDatasetVideo_test(val_cfg, '../A2D')
     dataloader = DataLoader(test_dataset, batch_size=1,
                             shuffle=False, num_workers=1)
     for i, data in enumerate(dataloader):
